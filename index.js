@@ -10,10 +10,28 @@ const exphbs = require('express-handlebars')
 // registering the bodyparser
 app.use(bodyParser.urlencoded({extended: false}))
 
-mongoose.connect(process.env.MongoDbUrl).then(() => console.log("Connected to MongoDb")).catch((err) => console.log(err))
 
+const connectDB = async () => {
+    try {
+      const conn = await mongoose.connect(process.env.MongoDbUrl);
+      console.log(`MongoDB Connected: ${conn.connection.host}`);
+    } catch (error) {
+      console.log(error);
+      process.exit(1);
+    }
+  }
+
+//Connect to the database before listening
+connectDB().then(() => {
+    app.listen(port, () => {
+        console.log("listening for requests");
+    })
+})
+
+//To display css file
 app.use(express.static(__dirname + '/public'));
 
+//Implementing the template engine
 app.engine(
     '.hbs',
     exphbs.engine(
@@ -23,11 +41,13 @@ app.engine(
     )
 )
 
+//Setting the engine
 app.set(
     'view engine',
     '.hbs'
 )
 
+//Handling routes
 app.get('/', (req,res) => {
     res.render('manage-usernames', {errorMessage: req.query.errorMessage})
 })
@@ -59,5 +79,3 @@ app.get('/get-usernames', (req,res) => {
             }
         })
 })
-
-app.listen(port, () => console.log(`App running at port : ${port}`))
